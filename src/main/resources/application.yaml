@@ -1,0 +1,4 @@
+server:
+  port: 8082
+google-sheets:
+  spreadsheet-id: "1zwGH7RAwTrbAGFMUBqVbHo6Og1FGIoIuseEGlRGyd6U"
