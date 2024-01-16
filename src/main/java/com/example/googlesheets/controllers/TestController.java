@@ -2,6 +2,7 @@ package com.example.googlesheets.controllers;
 
 import com.example.googlesheets.services.GoogleSheetService;
 import com.example.googlesheets.services.RequestClientService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 import lombok.*;
@@ -10,6 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +36,8 @@ public class TestController {
     @Value("${google-sheets.spreadsheet-id}")
     private String spreadsheetId;
 
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
     @GetMapping("/read")
     public List<List<Object>> readSheetData() throws IOException {
         final String range = "Лист1!A1:D3";
@@ -49,34 +55,33 @@ public class TestController {
     }
 
     @GetMapping("/get")
-    public String get(){
-        return reqService.postRequest("http://45.136.50.92/admin_api/v1/report/build","a7b7d7111bdc0e221a3e8a0a5c43245e", "{\n" +
-                "    \"range\": {\n" +
-                "        \"interval\": \"today\",\n" +
-                "        \"timezone\": \"Europe/Amsterdam\"\n" +
-                "    },\n" +
-                "    \"columns\": [],\n" +
-                "    \"metrics\": [\n" +
-                "        \"clicks\",\n" +
-                "        \"campaign_unique_clicks\",\n" +
-                "        \"conversions\",\n" +
-                "        \"roi_confirmed\",\n" +
-                "        \"lp_clicks\",\n" +
-                "        \"leads\"\n" +
-                "    ],\n" +
-                "    \"grouping\": [\n" +
-                "        \"campaign\"\n" +
-                "    ],\n" +
-                "    \"filters\": [],\n" +
-                "    \"summary\": true,\n" +
-                "    \"limit\": 100,\n" +
-                "    \"offset\": 0\n" +
-                "}");
+    public Object get() throws JsonProcessingException {
+        return reqService.getInfoFromKeitaro();
+    }
+
+    @GetMapping("/get1")
+    public Object get1() throws JsonProcessingException {
+        return reqService.getInfoFromMultiLogin("Falcon_ENG2", "ITK_solakesao", "0993F1725D6EF787A326EBECF77DF499F4E95D93826DF7A32A340BFAA3C9F28DCED5B52583AD9138", "2024-01-16");
+    }
+
+    @GetMapping("/get2")
+    public Object get2() throws IOException {
+        return service.readGoogleSheets("Multilogin");
     }
 
     @PostMapping("/write")
     public void writeCellValue(@RequestParam String sheet, @RequestParam String cell, @RequestParam String value) throws IOException {
-        service.writeData(sheet, cell, value);
+        service.writeCell(sheet, cell, value);
+    }
+
+    @PostMapping("/test")
+    public void test() throws Exception {
+        LocalDateTime currentDate = LocalDateTime.now();
+
+        // Приводим к нужному формату
+        String formattedDate = currentDate.format(formatter);
+
+        reqService.setData(formattedDate);
     }
 
     @PostMapping("/createSheet")
@@ -86,6 +91,12 @@ public class TestController {
 
     @PostMapping("/writeDataToRange")
     public void writeDataToRange() throws IOException {
-        service.createTable();
+
+        LocalDate currentDate = LocalDate.now();
+
+        // Приводим к нужному формату
+        String formattedDate = currentDate.format(formatter);
+        service.createSheet(formattedDate);
+        service.createTable(formattedDate);
     }
 }

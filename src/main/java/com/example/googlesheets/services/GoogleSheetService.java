@@ -1,5 +1,7 @@
 package com.example.googlesheets.services;
 
+import com.example.googlesheets.models.MultiLoginAccounts;
+import com.example.googlesheets.models.Result;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 import lombok.*;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +29,7 @@ public class GoogleSheetService {
     @Value("${google-sheets.spreadsheet-id}")
     private String spreadsheetId;
 
-    public void writeData(String sheet, String cell, String value) throws IOException{
+    public void writeCell(String sheet, String cell, String value) throws IOException{
         ValueRange body = new ValueRange()
                 .setValues(Collections.singletonList(Collections.singletonList(value)));
 
@@ -49,34 +52,128 @@ public class GoogleSheetService {
         Request request = new Request().setAddSheet(addSheetRequest);
 
         // Устанавливаем порядковый номер нового листа в 0 (первый лист)
-        sheetProperties.setIndex(0);
+        sheetProperties.setIndex(1);
 
         // Создаем объект BatchUpdateSpreadsheetRequest с добавлением запроса
         BatchUpdateSpreadsheetRequest batchUpdateRequest = new BatchUpdateSpreadsheetRequest()
                 .setRequests(Collections.singletonList(request));
 
         // Выполняем запрос на добавление нового листа
-        sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute();
+        try {
+            sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute();
+            createTable(title);
+        } catch (Exception e){
+
+        }
     }
 
-    public void createTable() throws IOException {
+    public List<MultiLoginAccounts> readGoogleSheets(String sheetName) throws IOException {
+        String range = sheetName + "!A:C"; // Предполагаем, что данные находятся в столбцах A, B, C
+
+        ValueRange response = sheetsService.spreadsheets().values()
+                .get(spreadsheetId, range)
+                .execute();
+
+        List<List<Object>> values = response.getValues();
+        List<MultiLoginAccounts> accountsList = new ArrayList<>();
+
+        if (values != null && !values.isEmpty()) {
+            int counter = 0;
+            for (List<Object> row : values) {
+                counter++;
+                if(counter > 1) {
+                    MultiLoginAccounts account = new MultiLoginAccounts();
+                    account.setAccount(getStringValue(row.get(0)));
+                    account.setCredentialsAccount(getStringValue(row.get(1)));
+                    account.setCredentialsToken(getStringValue(row.get(2)));
+                    accountsList.add(account);
+                }
+            }
+        }
+
+        return accountsList;
+    }
+
+    private String getStringValue(Object value) {
+        return value != null ? value.toString() : "";
+    }
+
+    public void writeDataFromList(String sheet, List<Result> dataList) throws IOException {
+        int dataSize = dataList.size();
+        List<List<Object>> dataToWrite = new ArrayList<>();
+        for (Result data : dataList) {
+            List<Object> line = new ArrayList<>();
+            line.add(data.getToken());
+            line.add(data.getAccount());
+            line.add(data.getCampaignName());
+            line.add(data.getCreativeID());
+            line.add(data.getSpent());
+            line.add(data.getLpClicks());
+            line.add(data.getLpClickCostAndFee());
+            line.add(data.getLeads());
+            line.add(data.getLeadCostAndFee());
+            line.add("");
+            line.add(data.getMaxLpClickCost());
+            line.add(data.getMaxLeadCost());
+            dataToWrite.add(line);
+        }
+
+        String range = "A2:L" + (dataSize + 1);
+        writeRangeData(sheet, range, dataToWrite);
+    }
+
+    private void writeRangeData(String sheet, String range, List<List<Object>> values) throws IOException {
+
+        ValueRange body = new ValueRange().setValues(values);
+
+        UpdateValuesResponse result = sheetsService.spreadsheets().values()
+                .update(spreadsheetId, sheet + "!" + range, body)
+                .setValueInputOption("USER_ENTERED")
+                .execute();
+    }
+
+
+
+    public void clearGoogleSheet(String sheet) throws Exception {
+        // Создание запроса на очистку значений
+        ClearValuesRequest clearValuesRequest = new ClearValuesRequest();
+        String range = sheet + "!A2:Z1000";
+
+        // Выполнение запроса на очистку
+        sheetsService.spreadsheets().values().clear(spreadsheetId, range, clearValuesRequest).execute();
+    }
+
+    private Integer getSheetIdByName(String sheetName) throws IOException {
+
+        Spreadsheet spreadsheet = sheetsService.spreadsheets().get(spreadsheetId).execute();
+        List<Sheet> sheets = spreadsheet.getSheets();
+
+        for (Sheet sheet : sheets) {
+            if (sheet.getProperties().getTitle().equals(sheetName)) {
+                return sheet.getProperties().getSheetId();
+            }
+        }
+
+        throw new IllegalArgumentException("Лист с именем " + sheetName + " не найден.");
+    }
+
+    public void createTable(String sheet) throws IOException {
         // Текст для записи в ячейки
         String token = "Token (ENG)";
         String account = "Account";
         String campaignName = "Campaign name (Eng)";
         String creativeId = "Creative ID (both)";
-        String spent = "Spent (Eng)";
+        String spent = "Spent + fee (Eng)";
         String lpClicks = "LP clicks (K)";
         String lpClickCost = "LP click cost + fee";
         String leads = "Leads (K)";
         String leadCost = "Lead cost + fee";
+        String maxLpClickCost = "Max LP click cost";
         String maxLeadCost = "Max lead cost";
-
-        String sheet = "Лист1";
 
         // Создаем список значений для записи
         List<List<Object>> values = Collections.singletonList(Arrays.asList(
-                token, account, campaignName, creativeId, spent, lpClicks, lpClickCost, leads, leadCost, "", "","","", maxLeadCost
+                token, account, campaignName, creativeId, spent, lpClicks, lpClickCost, leads, leadCost, "", maxLpClickCost, maxLeadCost
                 ));
 
         // Определяем диапазон ячеек, куда будем записывать данные (A1:I1)
@@ -100,13 +197,15 @@ public class GoogleSheetService {
                         .setRight(new Border().setStyle("SOLID").setWidth(1))
                 );
 
+        String sheetName = sheet;
+        Integer sheetId = getSheetIdByName(sheetName);
         // Определяем GridRange для указания диапазона ячеек
         GridRange gridRange = new GridRange()
-                .setSheetId(0)  // Идентификатор листа
+                .setSheetId(sheetId)  // Идентификатор листа
                 .setStartRowIndex(0)
                 .setEndRowIndex(1)
                 .setStartColumnIndex(0)
-                .setEndColumnIndex(9);
+                .setEndColumnIndex(values.get(0).size());
 
         // Создаем объект RepeatCellRequest с указанием стиля и диапазона
         RepeatCellRequest repeatCellRequest = new RepeatCellRequest()
