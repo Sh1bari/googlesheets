@@ -99,7 +99,7 @@ public class RequestClientService {
         );
 
         list.forEach(o -> {
-            multiLoginInfoVar.put(o.get(2), new MultiLoginInfoVar(credentialsAccount, credentialsToken, o.get(3)));
+            multiLoginInfoVar.put(o.get(2), new MultiLoginInfoVar(credentialsAccount, credentialsToken, o.get(3), o.get(8)));
         });
 
         ResponseEntity<String> res = postRequest("https://platform.engageya.com/dashboard-api/api/reports/v1/reports/currentlyRunningCampaign",
@@ -122,8 +122,8 @@ public class RequestClientService {
                 MultiLoginInfoVar var = multiLoginInfoVar.get(o.get(0));
                 if(keitaroInfo.get(var.getCreativeId()) != null) {
                     KeitaroInfo keitaroVar = keitaroInfo.get(var.getCreativeId());
-                    multiLoginInfo.put(var.getCreativeId(), new MultiLoginInfo(var.getAccount(), var.getToken(), o.get(7)));
-                    double spent = Double.parseDouble(o.get(7).substring(1)) * 1.2;
+                    multiLoginInfo.put(var.getCreativeId(), new MultiLoginInfo(var.getAccount(), var.getToken(), var.getSpent()));
+                    double spent = Double.parseDouble(var.getSpent().substring(1).replace(",", "")) * 1.2;
                     DecimalFormat decimalFormat = new DecimalFormat("0.000");
                     String spentString = decimalFormat.format(spent);
                             String lpClickCostAndFee = !keitaroVar.getLpClicks().equals("0") ?
