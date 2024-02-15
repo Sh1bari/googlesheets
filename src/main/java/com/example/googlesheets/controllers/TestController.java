@@ -59,6 +59,13 @@ public class TestController {
         return reqService.getInfoFromKeitaro();
     }
 
+    private final RequestClientService requestClientService;
+    @SneakyThrows
+    @GetMapping("initDate")
+    public void init(@RequestParam(name = "date")String date){
+        requestClientService.setData(date);
+    }
+
     @GetMapping("/get1")
     public Object get1() throws JsonProcessingException {
         return reqService.getInfoFromMultiLogin("Falcon_ENG2", "ITK_solakesao", "0993F1725D6EF787A326EBECF77DF499F4E95D93826DF7A32A340BFAA3C9F28DCED5B52583AD9138", "2024-01-16");
