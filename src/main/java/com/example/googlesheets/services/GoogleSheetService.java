@@ -115,10 +115,21 @@ public class GoogleSheetService {
             line.add("");
             line.add(data.getMaxLpClickCost());
             line.add(data.getMaxLeadCost());
+            double result1 = (Double.parseDouble(data.getMaxLpClickCost().replace(",", ".").replace("Inf", "99999999999")) -
+                    Double.parseDouble(data.getLpClickCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
+                    Double.parseDouble(data.getLpClickCostAndFee().replace(",", ".").replace("Inf", "99999999999"));
+
+            line.add(Math.round(result1 * 100) + "%");
+            line.add("");
+            double result2 = (Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) -
+                    Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
+                    Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"));
+
+            line.add(Math.round(result2 * 100) + "%");
             dataToWrite.add(line);
         }
 
-        String range = "A2:L" + (dataSize + 1);
+        String range = "A2:O" + (dataSize + 1);
         writeRangeData(sheet, range, dataToWrite);
     }
 
@@ -170,14 +181,19 @@ public class GoogleSheetService {
         String leadCost = "Lead cost + fee";
         String maxLpClickCost = "Max LP click cost";
         String maxLeadCost = "Max lead cost";
+        String roiClick = "ROI based on LP click";
+        String roiLead = "ROI based on Lead";
 
         // Создаем список значений для записи
         List<List<Object>> values = Collections.singletonList(Arrays.asList(
-                token, account, campaignName, creativeId, spent, lpClicks, lpClickCost, leads, leadCost, "", maxLpClickCost, maxLeadCost
+                token, account, campaignName, creativeId, spent, lpClicks, lpClickCost, leads, leadCost, "", maxLpClickCost, maxLeadCost,
+                roiClick,
+                "",
+                roiLead
                 ));
 
         // Определяем диапазон ячеек, куда будем записывать данные (A1:I1)
-        String range = sheet + "!A1:N1";
+        String range = sheet + "!A1:O1";
 
         // Создаем объект BatchUpdateValuesRequest с указанием диапазона и значений
         BatchUpdateValuesRequest batchUpdateRequest = new BatchUpdateValuesRequest()

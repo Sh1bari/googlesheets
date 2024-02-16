@@ -143,7 +143,9 @@ public class RequestClientService {
                         } else if (var.getCampaignName().contains("AT")) {
                             maxLeadCost = "160";
                         } else if (var.getCampaignName().contains("UK")) {
-                            maxLeadCost = "100";
+                            maxLeadCost = "90";
+                        } else if (var.getCampaignName().contains("PT")) {
+                            maxLeadCost = "80";
                         } else {
                             maxLeadCost = "Error";
                         }
