@@ -17,6 +17,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Description:
@@ -96,7 +97,7 @@ public class RequestClientService {
     }
 
     //String name, String token
-    public String getInfoFromMultiLogin(String account, String credentialsAccount, String credentialsToken, String time) throws JsonProcessingException {
+    public String getInfoFromMultiLogin(String account, String credentialsAccount, String credentialsToken, String time, Map<String, String> costs) throws JsonProcessingException {
         String body = MULTILOGIN_BODY(time);
         ResponseEntity<String> responseEntity = postRequest("https://platform.engageya.com/dashboard-api/api/reports/v1/reports/getCampaignPostsStatisticsForLast30Days",
                 KEITARO_TOKEN,
@@ -138,18 +139,22 @@ public class RequestClientService {
                                 "Inf";
                         String maxLeadCost = "";
 
-                        if (var.getCampaignName().contains("DE")) {
-                            maxLeadCost = "165";
-                        } else if (var.getCampaignName().contains("AT")) {
-                            maxLeadCost = "160";
-                        } else if (var.getCampaignName().contains("UK")) {
-                            maxLeadCost = "90";
-                        } else if (var.getCampaignName().contains("PT")) {
-                            maxLeadCost = "80";
-                        } else {
+                        for (Map.Entry<String, String> entry : costs.entrySet()) {
+                            String kc = entry.getKey();
+                            String vc = entry.getValue();
+
+                            if (var.getCampaignName().contains(kc)) {
+                                maxLeadCost = vc;
+                                break;
+                            }
+                        }
+
+                        if(maxLeadCost.equals("")){
                             maxLeadCost = "Error";
                         }
+
                         String maxLpClickCost = "";
+
                         if (!maxLeadCost.equals("Error")) {
                             maxLpClickCost = String.format("%.2f", Double.parseDouble(maxLeadCost) * 0.08);
                         }
@@ -177,18 +182,20 @@ public class RequestClientService {
 
     public void setData(String time) throws Exception {
         googleSheetService.createSheet(time);
-        List<MultiLoginAccounts> accounts = googleSheetService.readGoogleSheets("Multilogin");
+        List<MultiLoginAccounts> accounts = googleSheetService.readGoogleSheetsMultilogin("Multilogin");
+        Map<String, String> costs = googleSheetService.readGoogleSheetsMaxLeadCost("Max lead cost"); //name - cost
         clearLocalData();
         getInfoFromKeitaro();
         accounts.forEach(o -> {
             try {
-                getInfoFromMultiLogin(o.getAccount(), o.getCredentialsAccount(), o.getCredentialsToken(), time);
+                getInfoFromMultiLogin(o.getAccount(), o.getCredentialsAccount(), o.getCredentialsToken(), time, costs);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
         });
         googleSheetService.clearGoogleSheet(time);
         googleSheetService.writeDataFromList(time, result);
+        googleSheetService.alignTextRight(time);
     }
 
     public ResponseEntity<String> postRequest(String apiUrl, String apiKey, String jsonData, String credentialsAccount, String credentialsToken) {

@@ -66,14 +66,22 @@ public class TestController {
         requestClientService.setData(date);
     }
 
+    @SneakyThrows
+    @GetMapping("initTableFrom8")
+    public void initFrom(){
+        for(int i = 8; i < 17; i++){
+            requestClientService.setData("2024-02-" + i);
+        }
+    }
+
     @GetMapping("/get1")
     public Object get1() throws JsonProcessingException {
-        return reqService.getInfoFromMultiLogin("Falcon_ENG2", "ITK_solakesao", "0993F1725D6EF787A326EBECF77DF499F4E95D93826DF7A32A340BFAA3C9F28DCED5B52583AD9138", "2024-01-16");
+        return reqService.getInfoFromMultiLogin("Falcon_ENG2", "ITK_solakesao", "0993F1725D6EF787A326EBECF77DF499F4E95D93826DF7A32A340BFAA3C9F28DCED5B52583AD9138", "2024-01-16", null);
     }
 
     @GetMapping("/get2")
     public Object get2() throws IOException {
-        return service.readGoogleSheets("Multilogin");
+        return service.readGoogleSheetsMultilogin("Multilogin");
     }
 
     @PostMapping("/write")

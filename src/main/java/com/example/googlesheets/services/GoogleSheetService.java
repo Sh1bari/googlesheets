@@ -4,16 +4,13 @@ import com.example.googlesheets.models.MultiLoginAccounts;
 import com.example.googlesheets.models.Result;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
-import lombok.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.text.DecimalFormat;
+import java.util.*;
 
 /**
  * Description:
@@ -29,7 +26,7 @@ public class GoogleSheetService {
     @Value("${google-sheets.spreadsheet-id}")
     private String spreadsheetId;
 
-    public void writeCell(String sheet, String cell, String value) throws IOException{
+    public void writeCell(String sheet, String cell, String value) throws IOException {
         ValueRange body = new ValueRange()
                 .setValues(Collections.singletonList(Collections.singletonList(value)));
 
@@ -39,7 +36,7 @@ public class GoogleSheetService {
                 .execute();
     }
 
-    public void createSheet(String title) throws IOException{
+    public void createSheet(String title) throws IOException {
         List<Sheet> sheets = sheetsService.spreadsheets().get(spreadsheetId).execute().getSheets();
 
         // Создаем объект SheetProperties с указанием заголовка нового листа
@@ -52,7 +49,7 @@ public class GoogleSheetService {
         Request request = new Request().setAddSheet(addSheetRequest);
 
         // Устанавливаем порядковый номер нового листа в 0 (первый лист)
-        sheetProperties.setIndex(1);
+        sheetProperties.setIndex(2);
 
         // Создаем объект BatchUpdateSpreadsheetRequest с добавлением запроса
         BatchUpdateSpreadsheetRequest batchUpdateRequest = new BatchUpdateSpreadsheetRequest()
@@ -62,12 +59,12 @@ public class GoogleSheetService {
         try {
             sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute();
             createTable(title);
-        } catch (Exception e){
+        } catch (Exception e) {
 
         }
     }
 
-    public List<MultiLoginAccounts> readGoogleSheets(String sheetName) throws IOException {
+    public List<MultiLoginAccounts> readGoogleSheetsMultilogin(String sheetName) throws IOException {
         String range = sheetName + "!A:C"; // Предполагаем, что данные находятся в столбцах A, B, C
 
         ValueRange response = sheetsService.spreadsheets().values()
@@ -81,7 +78,7 @@ public class GoogleSheetService {
             int counter = 0;
             for (List<Object> row : values) {
                 counter++;
-                if(counter > 1) {
+                if (counter > 1) {
                     MultiLoginAccounts account = new MultiLoginAccounts();
                     account.setAccount(getStringValue(row.get(0)));
                     account.setCredentialsAccount(getStringValue(row.get(1)));
@@ -94,9 +91,34 @@ public class GoogleSheetService {
         return accountsList;
     }
 
+    public Map<String, String> readGoogleSheetsMaxLeadCost(String sheetName) throws IOException {
+        String range = sheetName + "!A:B"; // Предполагаем, что данные находятся в столбцах A, B
+
+        ValueRange response = sheetsService.spreadsheets().values()
+                .get(spreadsheetId, range)
+                .execute();
+
+        List<List<Object>> values = response.getValues();
+        Map<String, String> costs = new HashMap<>();
+
+        if (values != null && !values.isEmpty()) {
+            int counter = 0;
+            for (List<Object> row : values) {
+                counter++;
+                if (counter > 1) {
+                    costs.put(getStringValue(getStringValue(row.get(0))), getStringValue(row.get(1)));
+                }
+            }
+        }
+
+        return costs;
+    }
+
     private String getStringValue(Object value) {
         return value != null ? value.toString() : "";
     }
+
+    DecimalFormat df = new DecimalFormat("0.00%");
 
     public void writeDataFromList(String sheet, List<Result> dataList) throws IOException {
         int dataSize = dataList.size();
@@ -107,29 +129,38 @@ public class GoogleSheetService {
             line.add(data.getAccount());
             line.add(data.getCampaignName());
             line.add(data.getCreativeID());
-            line.add(data.getSpent());
             line.add(data.getLpClicks());
             line.add(data.getLpClickCostAndFee());
             line.add(data.getLeads());
             line.add(data.getLeadCostAndFee());
-            line.add("");
-            line.add(data.getMaxLpClickCost());
-            line.add(data.getMaxLeadCost());
-            double result1 = (Double.parseDouble(data.getMaxLpClickCost().replace(",", ".").replace("Inf", "99999999999")) -
+            Double roiLpClicks = (Double.parseDouble(data.getMaxLpClickCost().replace(",", ".").replace("Inf", "99999999999")) -
                     Double.parseDouble(data.getLpClickCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
                     Double.parseDouble(data.getLpClickCostAndFee().replace(",", ".").replace("Inf", "99999999999"));
+            line.add(df.format(roiLpClicks));
 
-            line.add(Math.round(result1 * 100) + "%");
             line.add("");
-            double result2 = (Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) -
+
+            line.add(data.getSpent());
+            Double revenueLead = Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) *
+                    Double.parseDouble(data.getLeads().replace(",", ".").replace("Inf", "99999999999"));
+            line.add(revenueLead.toString());
+            Double profitLead = revenueLead -
+                    Double.parseDouble(data.getSpent().replace(",", ".").replace("Inf", "99999999999"));
+            line.add(profitLead.toString());
+
+            Double roiLead = (Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) -
                     Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
                     Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"));
+            line.add(df.format(roiLead));
 
-            line.add(Math.round(result2 * 100) + "%");
+            line.add("");
+
+            line.add(data.getMaxLpClickCost());
+            line.add(data.getMaxLeadCost());
             dataToWrite.add(line);
         }
 
-        String range = "A2:O" + (dataSize + 1);
+        String range = "A3:Q" + (dataSize + 2);
         writeRangeData(sheet, range, dataToWrite);
     }
 
@@ -144,15 +175,38 @@ public class GoogleSheetService {
     }
 
 
-
     public void clearGoogleSheet(String sheet) throws Exception {
         // Создание запроса на очистку значений
         ClearValuesRequest clearValuesRequest = new ClearValuesRequest();
-        String range = sheet + "!A2:Z1000";
+        String range = sheet + "!A3:Z1000";
 
         // Выполнение запроса на очистку
         sheetsService.spreadsheets().values().clear(spreadsheetId, range, clearValuesRequest).execute();
     }
+
+    public void alignTextRight(String sheet) throws Exception {
+        // Создание объекта CellFormat с указанием выравнивания текста справа
+        CellFormat rightAlignmentFormat = new CellFormat()
+                .setHorizontalAlignment("RIGHT")
+                .setTextFormat(new TextFormat().setFontSize(10)); // Дополнительные параметры форматирования текста
+
+        // Определение диапазона ячеек
+        String range = sheet + "!D2:Z1000";
+
+        // Создание запроса на обновление ячеек с указанием формата
+        RepeatCellRequest repeatCellRequest = new RepeatCellRequest()
+                .setCell(new CellData().setUserEnteredFormat(rightAlignmentFormat))
+                .setFields("userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontSize")
+                .setRange(new GridRange().setSheetId(getSheetIdByName(sheet)).setStartRowIndex(1).setEndRowIndex(1000).setStartColumnIndex(3).setEndColumnIndex(25));
+
+        Request request = new Request().setRepeatCell(repeatCellRequest);
+        BatchUpdateSpreadsheetRequest batchUpdateRequest = new BatchUpdateSpreadsheetRequest().setRequests(Collections.singletonList(request));
+
+        // Выполнение запроса на обновление ячеек
+        sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute();
+    }
+
+
 
     private Integer getSheetIdByName(String sheetName) throws IOException {
 
@@ -181,19 +235,36 @@ public class GoogleSheetService {
         String leadCost = "Lead cost + fee";
         String maxLpClickCost = "Max LP click cost";
         String maxLeadCost = "Max lead cost";
-        String roiClick = "ROI based on LP click";
-        String roiLead = "ROI based on Lead";
+        String roiClick = "ROI (LP clicks)";
+        String roiLead = "ROI (Lead)";
+        String revenueLead = "Revenue (Lead)";
+        String profitLead = "Profit (Lead)";
 
         // Создаем список значений для записи
-        List<List<Object>> values = Collections.singletonList(Arrays.asList(
-                token, account, campaignName, creativeId, spent, lpClicks, lpClickCost, leads, leadCost, "", maxLpClickCost, maxLeadCost,
-                roiClick,
-                "",
-                roiLead
-                ));
+        List<List<Object>> values = Arrays.asList(
+                Arrays.asList(
+                        token,
+                        account,
+                        campaignName,
+                        creativeId,
+                        lpClicks,
+                        lpClickCost,
+                        leads,
+                        leadCost,
+                        roiClick,
+                        "",
+                        spent,
+                        revenueLead,
+                        profitLead,
+                        roiLead,
+                        "",
+                        maxLpClickCost,
+                        maxLeadCost
+                ),
+                Arrays.asList("", "", "", "", "", "", "", "", "", "Total:", "", "", "", "", "", "", "", "")
+        );
 
-        // Определяем диапазон ячеек, куда будем записывать данные (A1:I1)
-        String range = sheet + "!A1:O1";
+        String range = sheet + "!A1:R2";
 
         // Создаем объект BatchUpdateValuesRequest с указанием диапазона и значений
         BatchUpdateValuesRequest batchUpdateRequest = new BatchUpdateValuesRequest()
@@ -238,5 +309,74 @@ public class GoogleSheetService {
 
         // Выполняем запрос на выделение ячеек
         sheetsService.spreadsheets().batchUpdate(spreadsheetId, updateRequest).execute();
+
+        CellFormat orangeCellFormat = new CellFormat()
+                .setBackgroundColor(new Color().setRed(1.0f).setGreen(0.5f).setBlue(0.0f)); // Используйте оранжевый цвет
+
+        GridRange gridRangeOrange = new GridRange()
+                .setSheetId(sheetId)  // Идентификатор листа
+                .setStartRowIndex(1)   // Начинаем со второй строки
+                .setEndRowIndex(2)     // Заканчиваем на третьей строке (не включая)
+                .setStartColumnIndex(0)
+                .setEndColumnIndex(values.get(0).size());
+
+        RepeatCellRequest repeatCellRequestOrange = new RepeatCellRequest()
+                .setCell(new CellData().setUserEnteredFormat(orangeCellFormat))
+                .setFields("userEnteredFormat.backgroundColor")
+                .setRange(gridRangeOrange);
+
+
+        Request requestOrange = new Request().setRepeatCell(repeatCellRequestOrange);
+
+        BatchUpdateSpreadsheetRequest updateRequestOrange = new BatchUpdateSpreadsheetRequest()
+                .setRequests(Collections.singletonList(requestOrange));
+
+        sheetsService.spreadsheets().batchUpdate(spreadsheetId, updateRequestOrange).execute();
+
+        CellFormat orangeCellFormatBordered = new CellFormat()
+                .setBorders(new Borders()
+                        .setBottom(new Border().setStyle("SOLID").setWidth(2))
+                        .setTop(new Border().setStyle("SOLID").setWidth(2))
+                        .setLeft(new Border().setStyle("SOLID").setWidth(2))
+                        .setRight(new Border().setStyle("SOLID").setWidth(2))
+                );
+
+        GridRange gridRangeOrangeBordered = new GridRange()
+                .setSheetId(sheetId)  // Идентификатор листа
+                .setStartRowIndex(1)   // Начинаем со второй строки
+                .setEndRowIndex(2)     // Заканчиваем на третьей строке (не включая)
+                .setStartColumnIndex(9)
+                .setEndColumnIndex(14);
+
+        RepeatCellRequest repeatCellRequestOrangeBordered = new RepeatCellRequest()
+                .setCell(new CellData().setUserEnteredFormat(orangeCellFormatBordered))
+                .setFields("userEnteredFormat.borders")
+                .setRange(gridRangeOrangeBordered);
+
+        Request requestOrangeBordered = new Request().setRepeatCell(repeatCellRequestOrangeBordered);
+
+        BatchUpdateSpreadsheetRequest updateRequestOrangeBordered = new BatchUpdateSpreadsheetRequest()
+                .setRequests(Collections.singletonList(requestOrangeBordered));
+
+        sheetsService.spreadsheets().batchUpdate(spreadsheetId, updateRequestOrangeBordered).execute();
+
+        String formulaRange = sheetName + "!K2:N2";
+
+        List<Object> formulas = Arrays.asList(
+                "=SUM(K3:K1000)",
+                "=SUM(L3:L1000)",
+                "=SUM(M3:M1000)",
+                "=TEXT(SUM(ARRAYFORMULA(VALUE(SUBSTITUTE(SUBSTITUTE(N3:N1000; \".\"; \"\"); \"%\"; \"\"))))/100; \"0.00%\")"
+        );
+
+        // Создаем объект ValueRange с тремя формулами
+        ValueRange valueRange = new ValueRange()
+                .setValues(Collections.singletonList(formulas));
+
+        // Выполняем запрос на обновление ячеек
+        sheetsService.spreadsheets().values()
+                .update(spreadsheetId, formulaRange, valueRange)
+                .setValueInputOption("USER_ENTERED")
+                .execute();
     }
 }
