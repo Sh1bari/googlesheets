@@ -136,7 +136,7 @@ public class GoogleSheetService {
             Double roiLpClicks = (Double.parseDouble(data.getMaxLpClickCost().replace(",", ".").replace("Inf", "99999999999")) -
                     Double.parseDouble(data.getLpClickCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
                     Double.parseDouble(data.getLpClickCostAndFee().replace(",", ".").replace("Inf", "99999999999"));
-            line.add(df.format(roiLpClicks));
+            line.add(df.format(roiLpClicks).replace(".", ","));
 
             line.add("");
 
@@ -151,7 +151,7 @@ public class GoogleSheetService {
             Double roiLead = (Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) -
                     Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
                     Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"));
-            line.add(df.format(roiLead));
+            line.add(df.format(roiLead).replace(".", ","));
 
             line.add("");
 
