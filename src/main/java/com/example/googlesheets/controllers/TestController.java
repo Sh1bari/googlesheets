@@ -54,10 +54,10 @@ public class TestController {
         return values;
     }
 
-    @GetMapping("/get")
+    /*@GetMapping("/get")
     public Object get() throws JsonProcessingException {
         return reqService.getInfoFromKeitaro();
-    }
+    }*/
 
     private final RequestClientService requestClientService;
     @SneakyThrows

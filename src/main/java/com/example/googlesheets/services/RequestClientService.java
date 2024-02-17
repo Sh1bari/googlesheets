@@ -35,9 +35,10 @@ public class RequestClientService {
     private final HashMap<String, MultiLoginInfoVar> multiLoginInfoVar = new HashMap<>(); //ключ - creative_id
     private final HashMap<String, MultiLoginInfo> multiLoginInfo = new HashMap<>(); //ключ - creative_id
     private final List<Result> result = new ArrayList<>();
-    private final String KEITARO_BODY = "{\n" +
+    private final String KEITARO_BODY(String time){
+        return "{\n" +
             "    \"range\": {\n" +
-            "        \"interval\": \"today\",\n" +
+            "        \"interval\": \"" + time + "\",\n" +
             "        \"timezone\": \"Europe/Amsterdam\"\n" +
             "    },\n" +
             "    \"columns\": [],\n" +
@@ -66,6 +67,7 @@ public class RequestClientService {
             "    \"limit\": 1000,\n" +
             "    \"offset\": 0\n" +
             "}";
+    }
     @Value("${api-key.keitaro}")
     private String KEITARO_TOKEN;
 
@@ -80,8 +82,8 @@ public class RequestClientService {
         result.clear();
     }
 
-    public String getInfoFromKeitaro() throws JsonProcessingException {
-        ResponseEntity<String> json = postRequest("http://45.136.50.92/admin_api/v1/report/build", KEITARO_TOKEN, KEITARO_BODY, "", "");
+    public String getInfoFromKeitaro(String time) throws JsonProcessingException {
+        ResponseEntity<String> json = postRequest("http://45.136.50.92/admin_api/v1/report/build", KEITARO_TOKEN, KEITARO_BODY(time), "", "");
 
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(json.getBody());
@@ -185,7 +187,7 @@ public class RequestClientService {
         List<MultiLoginAccounts> accounts = googleSheetService.readGoogleSheetsMultilogin("Multilogin");
         Map<String, String> costs = googleSheetService.readGoogleSheetsMaxLeadCost("Max lead cost"); //name - cost
         clearLocalData();
-        getInfoFromKeitaro();
+        getInfoFromKeitaro(time);
         accounts.forEach(o -> {
             try {
                 getInfoFromMultiLogin(o.getAccount(), o.getCredentialsAccount(), o.getCredentialsToken(), time, costs);
