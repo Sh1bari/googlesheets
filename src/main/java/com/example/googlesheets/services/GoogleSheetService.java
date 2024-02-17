@@ -119,6 +119,7 @@ public class GoogleSheetService {
     }
 
     DecimalFormat df = new DecimalFormat("0.00%");
+    DecimalFormat decF = new DecimalFormat("#0.00");
 
     public void writeDataFromList(String sheet, List<Result> dataList) throws IOException {
         int dataSize = dataList.size();
@@ -146,7 +147,7 @@ public class GoogleSheetService {
             line.add(revenueLead.toString());
             Double profitLead = revenueLead -
                     Double.parseDouble(data.getSpent().replace(",", ".").replace("Inf", "99999999999"));
-            line.add(profitLead.toString());
+            line.add(decF.format(profitLead));
 
             Double roiLead = (Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) -
                     Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
