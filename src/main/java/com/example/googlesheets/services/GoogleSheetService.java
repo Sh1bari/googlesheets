@@ -366,7 +366,7 @@ public class GoogleSheetService {
                 "=SUM(K3:K1000)",
                 "=SUM(L3:L1000)",
                 "=SUM(M3:M1000)",
-                "=TEXT(SUM(ARRAYFORMULA(VALUE(SUBSTITUTE(SUBSTITUTE(N3:N1000; \",\"; \"\"); \"%\"; \"\"))))/10000; \"0.00%\")"
+                "=TEXT(SUM(ARRAYFORMULA(VALUE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(N3:N1000; \",\"; \"\"); \"%\"; \"\");\"∞\";\"\"))))/10000; \"0.00%\")"
         );
 
         // Создаем объект ValueRange с тремя формулами
