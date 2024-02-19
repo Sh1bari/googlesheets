@@ -179,6 +179,7 @@ public class RequestClientService {
                 }
         );
 
+        multiLoginInfoVar.clear();
         return multiLoginInfo.toString();
     }
 

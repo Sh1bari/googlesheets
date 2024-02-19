@@ -141,13 +141,13 @@ public class GoogleSheetService {
 
             line.add("");
 
-            line.add(data.getSpent());
+            line.add(Double.parseDouble(data.getSpent().replace(",", ".")));
             Double revenueLead = Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) *
                     Double.parseDouble(data.getLeads().replace(",", ".").replace("Inf", "99999999999"));
-            line.add(revenueLead.toString());
+            line.add(revenueLead);
             Double profitLead = revenueLead -
                     Double.parseDouble(data.getSpent().replace(",", ".").replace("Inf", "99999999999"));
-            line.add(decF.format(profitLead));
+            line.add(Double.parseDouble(decF.format(profitLead).replace(",", ".")));
 
             Double roiLead = (Double.parseDouble(data.getMaxLeadCost().replace(",", ".").replace("Inf", "99999999999")) -
                     Double.parseDouble(data.getLeadCostAndFee().replace(",", ".").replace("Inf", "99999999999"))) /
