@@ -69,7 +69,7 @@ public class TestController {
     @SneakyThrows
     @GetMapping("initTableFrom8")
     public void initFrom(){
-        for(int i = 8; i < 17; i++){
+        for(int i = 15; i < 17; i++){
             requestClientService.setData("2024-02-" + i);
         }
     }

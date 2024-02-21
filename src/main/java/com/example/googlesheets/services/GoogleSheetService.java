@@ -367,7 +367,7 @@ public class GoogleSheetService {
                 "=SUM(K3:K1000)",
                 "=SUM(L3:L1000)",
                 "=SUM(M3:M1000)",
-                "=TEXT(SUM(ARRAYFORMULA(VALUE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(N3:N1000; \",\"; \"\"); \"%\"; \"\");\"∞\";\"\"))))/10000; \"0.00%\")"
+                "=(L2-K2)/K2"
         );
 
         // Создаем объект ValueRange с тремя формулами
@@ -379,5 +379,24 @@ public class GoogleSheetService {
                 .update(spreadsheetId, formulaRange, valueRange)
                 .setValueInputOption("USER_ENTERED")
                 .execute();
+
+        BatchUpdateSpreadsheetRequest batchUpdateSpreadsheetRequest = new BatchUpdateSpreadsheetRequest();
+        Request requestProc = new Request();
+        RepeatCellRequest repeatRequestProc = new RepeatCellRequest();
+        repeatRequestProc.setRange(new GridRange()
+                .setSheetId(sheetId)
+                .setStartRowIndex(1)
+                .setEndRowIndex(2)
+                .setStartColumnIndex(13)  // Индекс столбца N
+                .setEndColumnIndex(14)    // Индекс столбца N
+        );
+        repeatRequestProc.setCell(new CellData().setUserEnteredFormat(new CellFormat().setNumberFormat(new NumberFormat().setType("PERCENT").setPattern("0.00%"))));
+        repeatRequestProc.setFields("userEnteredFormat.numberFormat");
+
+        requestProc.setRepeatCell(repeatRequestProc);
+        batchUpdateSpreadsheetRequest.setRequests(Collections.singletonList(requestProc));
+
+// Выполняем запрос на обновление формата ячейки
+        sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateSpreadsheetRequest).execute();
     }
 }
