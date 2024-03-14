@@ -121,7 +121,7 @@ public class RequestClientService {
         );
 
         list.forEach(o -> {
-            multiLoginInfoVar.put(o.get(3), new MultiLoginInfoVar(credentialsAccount, credentialsToken, o.get(3), o.get(8), o.get(2)));
+            multiLoginInfoVar.put(o.get(3), new MultiLoginInfoVar(credentialsAccount, credentialsToken, o.get(3), o.get(9), o.get(2)));
         });
 
         multiLoginInfoVar.forEach((k, v) -> {
@@ -129,7 +129,7 @@ public class RequestClientService {
                     if (keitaroInfo.get(var.getCreativeId()) != null) {
                         KeitaroInfo keitaroVar = keitaroInfo.get(var.getCreativeId());
                         multiLoginInfo.put(var.getCreativeId(), new MultiLoginInfo(var.getAccount(), var.getToken(), var.getSpent()));
-                        String spentStr = var.getSpent();
+                        String spentStr = var.getSpent().substring(1);
                         double spent = Double.parseDouble(spentStr.replace(",", "")) * 1.2;
                         DecimalFormat decimalFormat = new DecimalFormat("0.000");
                         String spentString = decimalFormat.format(spent);
