@@ -129,7 +129,8 @@ public class RequestClientService {
                     if (keitaroInfo.get(var.getCreativeId()) != null) {
                         KeitaroInfo keitaroVar = keitaroInfo.get(var.getCreativeId());
                         multiLoginInfo.put(var.getCreativeId(), new MultiLoginInfo(var.getAccount(), var.getToken(), var.getSpent()));
-                        double spent = Double.parseDouble(var.getSpent().substring(1).replace(",", "")) * 1.2;
+                        String spentStr = var.getSpent();
+                        double spent = Double.parseDouble(spentStr.replace(",", "")) * 1.2;
                         DecimalFormat decimalFormat = new DecimalFormat("0.000");
                         String spentString = decimalFormat.format(spent);
                         String lpClickCostAndFee = !keitaroVar.getLpClicks().equals("0") ?
