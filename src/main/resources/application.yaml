@@ -1,7 +1,7 @@
 server:
   port: 8083
 google-sheets:
-  #spreadsheet-id: "1zwGH7RAwTrbAGFMUBqVbHo6Og1FGIoIuseEGlRGyd6U" #Artem
-  spreadsheet-id: "1YfhjaEBFY_phtZ73KsfyLI7np4k_KHalLpi1GQZTZOo" #Evgeniy
+  #spreadsheet-id: "1Y2Ua2vLn_mQ-mKhP7CPpX_qzk6In7jIaLL82TbV7zyU" #Artem
+  spreadsheet-id: "1Bkf6G03Gve2yIbfRY1PVHwjFdE1nPGa1-zMa017f1as" #Evgeniy
 api-key:
-  keitaro: "29c3555ddf146bc0c180b072f5e6e2e4"
+  keitaro: "14850ffae6bbb60067306d2351623db7"

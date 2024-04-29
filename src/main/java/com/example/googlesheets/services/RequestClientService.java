@@ -83,7 +83,7 @@ public class RequestClientService {
     }
 
     public String getInfoFromKeitaro(String time) throws JsonProcessingException {
-        ResponseEntity<String> json = postRequest("http://179.43.174.130/admin_api/v1/report/build", KEITARO_TOKEN, KEITARO_BODY(time), "", "");
+        ResponseEntity<String> json = postRequest("http://179.43.180.212/admin_api/v1/report/build", KEITARO_TOKEN, KEITARO_BODY(time), "", "");
 
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(json.getBody());
